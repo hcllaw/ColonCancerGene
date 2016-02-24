@@ -13,6 +13,8 @@ n_repeat = 500;
 max_threshold = 10;
 #number of thresholds to look at in cross validation
 n_threshold = 30;
+#set quantile for all errors
+quantile = 0.05;
 
 #NOTE FOR pamr: need to convert to data.frame then to matrix
 
@@ -45,6 +47,8 @@ threshold_array = rep(0,n_repeat); #array of optimal threshold for every repeat 
 n_genes_array = rep(0,n_repeat); #array of number of genes which survive the optimal threshold for every repeat of the experiment
 missclassification_array = matrix(0,nrow=n_repeat,ncol=n_threshold); #matrix of missclassification for every experiment (rows) for every threshold (column)
 gene_survival_array = matrix(0,nrow=n_repeat,ncol=n_threshold); #matrix of number of gene survival for every experiment (rows) for every threshold (column)
+optimal_threshold = 0;
+optimal_threshold_error = 0;
 
 #for n_repeat times
 for (i in 1:n_repeat){
@@ -74,9 +78,11 @@ for (i in 1:n_repeat){
   #SAVE THE NUMBER OF GENE SURVIVAL
   gene_survival_array[i,] = results$size;
   
-  #if this is the first run, get the CV plot
+  #if this is the first run, get the CV plot and save optimal threshold
   if (i == 1){
     pamr.plotcv(results);
+    optimal_threshold = results$threshold[optimal_index];
+    optimal_threshold_error = (results$threshold[optimal_index+1]-results$threshold[optimal_index])/2;
   }
   #save the gene names
   #pamr.listgenes(train, list(x = X_bootstrap, y = Y_bootstrap), threshold=0.1, genenames=TRUE);
@@ -92,10 +98,10 @@ print(sd(test_error_array)*100/sqrt(2*(n_repeat-1)));
 print("");
 
 #print results if the optimal threshold
-print("Mean and standard deviation of the optimal threshold (AU)");
+print("Mean and standard deviation of the optimal threshold (unknown units)");
 print( paste( mean(threshold_array), "+/-", sd(threshold_array) ) );
 #state the estimated standard deviation of the standard deviation in order to judge the number of significant figures to be used
-print("Estimated standard deviation of standard deviation (AU)");
+print("Estimated standard deviation of standard deviation (unknown units)");
 print(sd(threshold_array)/sqrt(2*(n_repeat-1)));
 
 print("");
@@ -107,15 +113,42 @@ print( paste( mean(n_genes_array), "+/-", sd(n_genes_array)) );
 print("Estimated standard deviation of standard deviation (count)");
 print(sd(n_genes_array)/sqrt(2*(n_repeat-1)));
 
+#print the optimal threshold
+print("Optimal threshold (unknown units)");
+print(paste(optimal_threshold,"+/-",optimal_threshold_error));
+print("");
+
+#print the missclassification error for threshold_index = 19
+print("Missclassification error 95% quantile (medium, upper error, lower error) for threshold index 19 (%)");
+medium = apply(missclassification_array,2,quantile,probs=0.5)[19]*100
+print(medium);
+print(apply(missclassification_array,2,quantile,probs=0.95)[19]*100 - medium);
+print(medium - apply(missclassification_array,2,quantile,probs=0.05)[19]*100);
+print("");
+
+#print the missclassification error for threshold_index = 19
+print("Number of surviving genes 95% quantile (medium, upper error, lower error) for threshold index 19");
+medium = apply(gene_survival_array,2,quantile,probs=0.5)[19]
+print(medium);
+print(apply(gene_survival_array,2,quantile,probs=0.95)[19] - medium);
+print(medium - apply(gene_survival_array,2,quantile,probs=0.05)[19]);
+print("");
+
+#print the missclassification error for threshold_index = 19
+print("Missclassification error 95% quantile (medium, upper error, lower error) for threshold index 1 (%)");
+medium = apply(missclassification_array,2,quantile,probs=0.5)[1]*100
+print(medium);
+print(apply(missclassification_array,2,quantile,probs=0.95)[1]*100 - medium);
+print(medium - apply(missclassification_array,2,quantile,probs=0.05)[1]*100);
+print("");
+
 #plot the error for each threshold
-missclassification_mean = colMeans(missclassification_array)*100; #calculate the mean
-missclassification_sd = apply(missclassification_array,2,sd)*100; #calculate the std (error bar)
-errbar(thresholdCV_array, missclassification_mean, missclassification_mean+missclassification_sd, missclassification_mean-missclassification_sd,xlab="Threshold",ylab="Validation Error (%)");
+errbar(thresholdCV_array, apply(missclassification_array,2,quantile,probs=0.5), apply(missclassification_array,2,quantile,probs=0.95), apply(missclassification_array,2,quantile,probs=0.05),xlab="Threshold (unknown units)",ylab="Validation Error (%)");
 
 #plot the number of gene survival for each threshold
-n_gene_mean = colMeans(gene_survival_array); #calculate the mean
-n_gene_sd = apply(gene_survival_array,2,sd); #calculate the std (error bar)
-errbar(thresholdCV_array, n_gene_mean, n_gene_mean+n_gene_sd, n_gene_mean-n_gene_sd,xlab="Threshold",ylab="Number of genes which survives threshold (genes)");
+n_gene_mean = colMeans(gene_survival_array);
+n_gene_std = apply(gene_survival_array,2,sd);
+errbar(thresholdCV_array, n_gene_mean, n_gene_mean+n_gene_std, n_gene_mean-n_gene_std,xlab="Threshold (unknown units)",ylab="Number of genes which survived thresholding (genes)");
 
 #save the variables
 save(list = ls(all.names = TRUE), file = "pam_classification_results_500.RData", envir = .GlobalEnv);
