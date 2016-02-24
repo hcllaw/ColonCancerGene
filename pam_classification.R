@@ -44,6 +44,7 @@ test_error_array = rep(0,n_repeat); #array of test error for every repeat of the
 threshold_array = rep(0,n_repeat); #array of optimal threshold for every repeat of the experiment
 n_genes_array = rep(0,n_repeat); #array of number of genes which survive the optimal threshold for every repeat of the experiment
 missclassification_array = matrix(0,nrow=n_repeat,ncol=n_threshold); #matrix of missclassification for every experiment (rows) for every threshold (column)
+gene_survival_array = matrix(0,nrow=n_repeat,ncol=n_threshold); #matrix of number of gene survival for every experiment (rows) for every threshold (column)
 
 #for n_repeat times
 for (i in 1:n_repeat){
@@ -70,6 +71,8 @@ for (i in 1:n_repeat){
   n_genes_array[i] = results$size[optimal_index]
   #SAVE THE MISSCLASSIFICATION ERROR
   missclassification_array[i,] = results$error;
+  #SAVE THE NUMBER OF GENE SURVIVAL
+  gene_survival_array[i,] = results$size;
   
   #if this is the first run, get the CV plot
   if (i == 1){
@@ -105,9 +108,14 @@ print("Estimated standard deviation of standard deviation (count)");
 print(sd(n_genes_array)/sqrt(2*(n_repeat-1)));
 
 #plot the error for each threshold
-missclassifcation_mean = colMeans(missclassification_array)*100; #calculate the mean
+missclassification_mean = colMeans(missclassification_array)*100; #calculate the mean
 missclassification_sd = apply(missclassification_array,2,sd)*100; #calculate the std (error bar)
-errbar(thresholdCV_array, missclassifcation_mean, missclassifcation_mean+missclassification_sd, missclassifcation_mean-missclassification_sd,xlab="Threshold",ylab="Validation Error (%)");
+errbar(thresholdCV_array, missclassification_mean, missclassification_mean+missclassification_sd, missclassification_mean-missclassification_sd,xlab="Threshold",ylab="Validation Error (%)");
+
+#plot the number of gene survival for each threshold
+n_gene_mean = colMeans(gene_survival_array); #calculate the mean
+n_gene_sd = apply(gene_survival_array,2,sd); #calculate the std (error bar)
+errbar(thresholdCV_array, n_gene_mean, n_gene_mean+n_gene_sd, n_gene_mean-n_gene_sd,xlab="Threshold",ylab="Number of genes which survives threshold (genes)");
 
 #save the variables
 save(list = ls(all.names = TRUE), file = "pam_classification_results_500.RData", envir = .GlobalEnv);
