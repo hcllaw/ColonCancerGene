@@ -126,12 +126,12 @@ print(apply(missclassification_array,2,quantile,probs=0.95)[19]*100 - medium);
 print(medium - apply(missclassification_array,2,quantile,probs=0.05)[19]*100);
 print("");
 
-#print the missclassification error for threshold_index = 19
-print("Number of surviving genes 95% quantile (medium, upper error, lower error) for threshold index 19");
-medium = apply(gene_survival_array,2,quantile,probs=0.5)[19]
-print(medium);
-print(apply(gene_survival_array,2,quantile,probs=0.95)[19] - medium);
-print(medium - apply(gene_survival_array,2,quantile,probs=0.05)[19]);
+#print the number of surviving genes for threshold_index = 19
+print("Mean and standard deviation of Number of surviving genes for threshold index 19");
+print( paste( colMeans(gene_survival_array)[19], "+/-", apply(gene_survival_array,2,sd)[19]) );
+#state the estimated standard deviation of the standard deviation in order to judge the number of significant figures to be used
+print("Estimated standard deviation of standard deviation (count)");
+print(apply(gene_survival_array,2,sd)[19]/sqrt(2*(n_repeat-1)));
 print("");
 
 #print the missclassification error for threshold_index = 19
